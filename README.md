@@ -38,3 +38,13 @@ If you wish to distribute your results as an ext3 filesystem image, run make_deb
 
 I had intended to create another script to create a complete disk image (including partition table), but I haven't figured out how to get it working yet.  The non-working script is called make_debian_olpc_sd_card_img.sh.
 
+# apt-cacher-ng
+
+If you plan on experimenting with these scripts, give your Debian mirror of choice a break and install a local caching proxy (this will also drastically speed up subsequent runs of the scripts).
+
+```
+sudo -i
+apt-get install apt-cacher-ng
+echo http://debian.mirrors.pair.com/debian/ > /etc/apt-cacher-ng/backends_debian.default
+/etc/init.d/apt-cacher-ng restart
+```
