@@ -8,27 +8,49 @@ set -x
 # see dtbaker.net/random-linux-posts/how-to-build-a-custom-linux-kernel-module-for-olpc/ 
 # see https://wiki.debian.org/howto_debian_olpc
 
-#apt-get install git build-essential ncurses-dev lzop
+for package in git build-essential libncurses5-dev:i386 lzop
+do
+    if dpkg --get-selections | awk '{print $1}' | grep "^${package}$"
+    then
+        continue
+    else
+        echo "Error: $package is not installed." >&2
+        exit 1
+    fi
+done
 
-if [ -e cache/olpc-kernel.tar.gz ]
+if [ ! -e olpc-kernel ]
 then
-    cat cache/olpc-kernel.tar.gz | nice gunzip | tar x
-else
-    git clone git://dev.laptop.org/olpc-kernel
+    if [ -e cache/olpc-kernel.tar.gz ]
+    then
+        cat cache/olpc-kernel.tar.gz | nice gunzip | tar x
+    else
+        git clone git://dev.laptop.org/olpc-kernel
+    fi
 fi
 
 cd olpc-kernel
-git checkout olpc-3.10
+nice git checkout olpc-3.10
 
 make clean distclean
 #make xo_1_defconfig
 cp ../config .config
 make menuconfig
+cp .config ../config
 
 nice make
-mkdir -p ../results
-cp -a vmlinux ../results/
-
+nice make bzImage
 nice make modules
-mkdir -p ../results/lib/modules
-INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=../results make modules_install
+
+RESULTSDIR="results_`date +%Y%m%d_%H%M%S`"
+mkdir -p ../$RESULTSDIR
+
+cp -a arch/x86/boot/bzImage ../$RESULTSDIR/
+
+mkdir -p ../$RESULTSDIR/lib/modules
+INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=../$RESULTSDIR make modules_install
+
+cp -a ../config ../$RESULTSDIR/
+
+echo "done."
+echo "results in $RESULTSDIR"
